@@ -1,0 +1,2741 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI多角色對話小說系統</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: flex;
+            min-height: 600px;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-right: 1px solid #e9ecef;
+        }
+
+        .content-area {
+            flex: 1;
+            padding: 20px;
+        }
+
+        .section {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            border-bottom: 2px solid #4facfe;
+            padding-bottom: 8px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .input-group input, .input-group textarea, .input-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .input-group input:focus, .input-group textarea:focus, .input-group select:focus {
+            outline: none;
+            border-color: #4facfe;
+        }
+
+        .chat-container {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 400px;
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid #e9ecef;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 12px 15px;
+            border-radius: 15px;
+            max-width: 80%;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .message.character {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin-left: auto;
+        }
+
+        .message.protagonist {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            margin-left: auto;
+            margin-right: 0;
+        }
+
+        .message.other {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin-left: 0;
+            margin-right: auto;
+        }
+
+        .message.narrator {
+            background: #e9ecef;
+            color: #495057;
+            text-align: center;
+            font-style: italic;
+            margin: 0 auto;
+        }
+
+        .message-header {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+
+        .character-list {
+            list-style: none;
+        }
+
+        .character-item {
+            background: white;
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #4facfe;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .character-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .character-desc {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 5px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px 20px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎭 AI多角色對話小說系統</h1>
+            <p>創造你的互動式對話小說</p>
+        </div>
+
+        <div class="main-content">
+            <!-- 側邊欄 - 角色管理 -->
+            <div class="sidebar">
+                <div class="section">
+                    <h3>👥 角色管理</h3>
+                    <button class="btn" onclick="showCreateCharacter()">+ 新增角色</button>
+                    <button class="btn btn-secondary" onclick="loadTemplate()">📋 載入範本</button>
+                    
+                    <div id="character-list">
+                        <ul class="character-list">
+                            <!-- 角色列表會動態載入 -->
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>⚙️ 系統設定</h3>
+                    <div class="input-group">
+                        <label>OpenRouter API Key：</label>
+                        <input type="password" id="api-key" placeholder="請輸入你的OpenRouter API Key">
+                        <small style="color: #666; font-size: 12px;">
+                            🔒 安全提示：API Key只會暫時儲存在記憶體中，不會被保存或分享
+                            <br>📍 從 <a href="https://openrouter.ai/" target="_blank" style="color: #4facfe;">openrouter.ai</a> 取得
+                        </small>
+                        <div style="margin-top: 8px;">
+                            <label style="display: flex; align-items: center; font-size: 12px; color: #666;">
+                                <input type="checkbox" id="save-api-key" style="margin-right: 5px;">
+                                暫時儲存到本地瀏覽器 (僅限此次使用)
+                            </label>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>主角設定：</label>
+                        <select id="protagonist-select">
+                            <option value="">選擇主角</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>匯出格式：</label>
+                        <select id="export-format">
+                            <option value="txt">純文字 (.txt)</option>
+                            <option value="docx">Word文件 (.docx)</option>
+                            <option value="pdf">PDF文件 (.pdf)</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-success" onclick="exportNovel()">📄 匯出小說</button>
+                    <button class="btn btn-secondary" onclick="saveProject()">💾 儲存專案</button>
+                </div>
+            </div>
+
+            <!-- 主要內容區 -->
+            <div class="content-area">
+                <div class="tabs">
+                    <div class="tab active" onclick="switchTab('chat')">💬 對話創作</div>
+                    <div class="tab" onclick="switchTab('character')">👤 角色編輯</div>
+                    <div class="tab" onclick="switchTab('preview')">📖 預覽小說</div>
+                </div>
+
+                <!-- 對話創作區 -->
+                <div id="chat-tab" class="tab-content">
+                    <div class="section">
+                        <h3>💬 對話創作區</h3>
+                        <div class="chat-container" id="chat-container">
+                            <div class="message narrator">
+                                <div class="message-header">系統提示</div>
+                                歡迎使用AI多角色對話小說系統！請先建立角色，然後開始創作對話。
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 15px; display: flex; gap: 10px;">
+                            <select id="speaker-select" style="flex: 0 0 150px;">
+                                <option value="">選擇說話者</option>
+                            </select>
+                            <input type="text" id="dialogue-input" placeholder="輸入對話內容..." style="flex: 1;" onkeypress="handleEnterKey(event)">
+                            <button class="btn" onclick="addDialogue()" id="send-btn">發送</button>
+                        </div>
+                        
+                        <div style="margin-top: 10px;">
+                            <button class="btn btn-secondary" onclick="addNarrator()">+ 新增旁白</button>
+                            <button class="btn" onclick="generateDialogueOptions()" id="choice-btn">🎯 生成對話選項</button>
+                            <button class="btn" onclick="generateFullNovel()" style="background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);">📚 AI自動生成小說</button>
+                            <button class="btn" onclick="generateAIScene()" style="background: linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%);">🎬 AI生成場景</button>
+                            <button class="btn" onclick="clearChat()" style="background: linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%);">🗑️ 清空對話</button>
+                        </div>
+                        
+                        <!-- 對話選項區域 -->
+                        <div id="dialogue-options" style="margin-top: 15px; padding: 15px; background: #f0f8ff; border-radius: 8px; display: none;">
+                            <h4 style="margin-bottom: 10px; color: #333;">💬 選擇回應</h4>
+                            <div id="dialogue-choices"></div>
+                            <button class="btn btn-secondary" onclick="hideDialogueOptions()" style="margin-top: 10px;">取消</button>
+                        </div>
+                        
+                        <!-- 自動生成小說設定 -->
+                        <div id="novel-generation" style="margin-top: 15px; padding: 15px; background: #fff8dc; border-radius: 8px; display: none;">
+                            <h4 style="margin-bottom: 10px; color: #333;">📚 自動生成小說設定</h4>
+                            <div class="input-group">
+                                <label>小說大綱：</label>
+                                <textarea id="novel-outline" rows="3" placeholder="請描述小說的主要情節，例如：一個關於友情的故事，兩個學生在學校相遇..."></textarea>
+                            </div>
+                            <div class="input-group">
+                                <label>目標字數：</label>
+                                <select id="novel-length">
+                                    <option value="5000">短篇 (約5000字)</option>
+                                    <option value="10000">中短篇 (約10000字)</option>
+                                    <option value="15000">中篇 (約15000字)</option>
+                                    <option value="20000">長篇 (約20000字)</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>結尾風格：</label>
+                                <select id="novel-ending" onchange="toggleCustomEnding()">
+                                    <option value="happy">圓滿結局</option>
+                                    <option value="open">開放式結局</option>
+                                    <option value="twist">轉折結局</option>
+                                    <option value="emotional">感人結局</option>
+                                    <option value="cliffhanger">懸念結局</option>
+                                    <option value="custom">其他 (自定義)</option>
+                                </select>
+                                <input type="text" id="custom-ending" placeholder="請描述你想要的結尾風格..." style="margin-top: 8px; display: none;">
+                            </div>
+                            <div class="input-group">
+                                <label>主要角色數量：</label>
+                                <select id="character-count" onchange="toggleCustomCharacterCount()">
+                                    <option value="2">2個主要角色</option>
+                                    <option value="3">3個主要角色</option>
+                                    <option value="4">4個主要角色 + 路人</option>
+                                    <option value="5">5個主要角色 + 路人</option>
+                                    <option value="custom">其他 (自定義)</option>
+                                </select>
+                                <input type="number" id="custom-character-count" min="1" max="10" placeholder="輸入角色數量 (1-10)" style="margin-top: 8px; display: none;">
+                            </div>
+                            <button class="btn" onclick="startNovelGeneration()">🚀 開始生成小說</button>
+                            <button class="btn btn-secondary" onclick="hideNovelGeneration()">取消</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 角色編輯區 -->
+                <div id="character-tab" class="tab-content hidden">
+                    <div class="section">
+                        <h3>👤 角色編輯</h3>
+                        <div id="character-editor">
+                            <div class="input-group">
+                                <label>角色名稱：</label>
+                                <input type="text" id="char-name" placeholder="請輸入角色名稱">
+                            </div>
+                            <div class="input-group">
+                                <label>角色個性：</label>
+                                <textarea id="char-personality" rows="3" placeholder="描述角色的個性特徵..."></textarea>
+                            </div>
+                            <div class="input-group">
+                                <label>說話語氣：</label>
+                                <input type="text" id="char-tone" placeholder="例如：溫和、活潑、嚴肅...">
+                            </div>
+                            <div class="input-group">
+                                <label>行為特色：</label>
+                                <textarea id="char-behavior" rows="2" placeholder="描述角色的行為習慣..."></textarea>
+                            </div>
+                            <button class="btn" onclick="saveCharacter()">💾 儲存角色</button>
+                            <button class="btn btn-secondary" onclick="clearCharacterForm()">🗑️ 清除</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 小說預覽區 -->
+                <div id="preview-tab" class="tab-content hidden">
+                    <div class="section">
+                        <h3>📖 小說預覽</h3>
+                        <div id="novel-preview" style="background: #f8f9fa; padding: 20px; border-radius: 8px; min-height: 400px; font-family: serif; line-height: 1.8;">
+                            <p style="text-align: center; color: #666;">小說內容會在這裡顯示...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.8.0/docx.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        // 全域變數
+        let characters = [];
+        let dialogues = [];
+        let currentEditingCharacter = null;
+        let protagonistId = null;
+        let apiKeyMemory = null; // 暫時儲存API Key在記憶體中
+        let characterMemories = {}; // 每個角色的記憶庫
+        let currentScene = { // 當前場景狀態
+            location: '室內',
+            timeOfDay: '白天',
+            weather: '晴朗',
+            atmosphere: '平靜',
+            established: false
+        };
+
+        // 預設角色範本
+        const characterTemplates = [
+            {
+                name: "艾莉絲",
+                personality: "聰明機智，有點任性但善良",
+                tone: "活潑直接，偶爾會有點小傲嬌",
+                behavior: "喜歡思考問題，經常做出意外的決定"
+            },
+            {
+                name: "雷恩",
+                personality: "沉穩可靠，內心溫柔",
+                tone: "說話溫和但堅定",
+                behavior: "總是優先考慮他人，習慣默默承擔責任"
+            },
+            {
+                name: "旁白者",
+                personality: "客觀冷靜，無所不知",
+                tone: "中性敘述，偶爾帶有詩意",
+                behavior: "負責場景描述和情節推進"
+            }
+        ];
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCharacterTemplates();
+            updateCharacterList();
+            updateSpeakerSelect();
+            
+            // 設定主角選擇監聽器
+            document.getElementById('protagonist-select').addEventListener('change', function() {
+                protagonistId = this.value;
+                console.log('主角設定為:', protagonistId);
+                // 重新顯示所有對話以更新樣式
+                refreshChatDisplay();
+            });
+
+            // API Key安全處理
+            setupAPIKeySecurity();
+        });
+
+        // API Key安全設定
+        function setupAPIKeySecurity() {
+            const apiKeyInput = document.getElementById('api-key');
+            const saveCheckbox = document.getElementById('save-api-key');
+
+            // 載入暫存的API Key（如果有的話）
+            const tempKey = sessionStorage.getItem('temp_api_key');
+            if (tempKey) {
+                apiKeyInput.value = tempKey;
+                saveCheckbox.checked = true;
+            }
+
+            // 監聽API Key輸入變化
+            apiKeyInput.addEventListener('input', function() {
+                apiKeyMemory = this.value;
+                
+                if (saveCheckbox.checked && this.value) {
+                    // 只在當前瀏覽器會話中暫存
+                    sessionStorage.setItem('temp_api_key', this.value);
+                } else {
+                    // 清除暫存
+                    sessionStorage.removeItem('temp_api_key');
+                }
+            });
+
+            // 監聽儲存選項變化
+            saveCheckbox.addEventListener('change', function() {
+                if (this.checked && apiKeyInput.value) {
+                    sessionStorage.setItem('temp_api_key', apiKeyInput.value);
+                    showSecurityTip('API Key已暫時儲存到本地瀏覽器');
+                } else {
+                    sessionStorage.removeItem('temp_api_key');
+                    showSecurityTip('API Key暫存已清除');
+                }
+            });
+
+            // 頁面關閉時清除敏感資料
+            window.addEventListener('beforeunload', function() {
+                if (!saveCheckbox.checked) {
+                    apiKeyMemory = null;
+                    sessionStorage.removeItem('temp_api_key');
+                }
+            });
+        }
+
+        // 顯示安全提示
+        function showSecurityTip(message) {
+            const tip = document.createElement('div');
+            tip.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #4facfe;
+                color: white;
+                padding: 10px 15px;
+                border-radius: 8px;
+                font-size: 14px;
+                z-index: 9999;
+                animation: slideIn 0.3s ease;
+            `;
+            tip.textContent = message;
+            document.body.appendChild(tip);
+
+            setTimeout(() => {
+                tip.remove();
+            }, 3000);
+        }
+
+        // 初始化角色記憶
+        function initializeCharacterMemory(characterId) {
+            if (!characterMemories[characterId]) {
+                characterMemories[characterId] = {
+                    spokenLines: new Set(), // 說過的話
+                    conversationHistory: [], // 對話歷史
+                    mood: 'neutral', // 當前情緒狀態
+                    topics: new Set() // 討論過的話題
+                };
+            }
+        }
+
+        // 更新角色記憶
+        function updateCharacterMemory(characterId, content, context) {
+            initializeCharacterMemory(characterId);
+            const memory = characterMemories[characterId];
+            
+            memory.spokenLines.add(content);
+            memory.conversationHistory.push({
+                content: content,
+                timestamp: new Date(),
+                context: context
+            });
+            
+            // 保持記憶庫大小合理（最多保留20條記錄）
+            if (memory.conversationHistory.length > 20) {
+                memory.conversationHistory.shift();
+            }
+        }
+
+        // 檢查角色是否說過類似的話
+        function hasCharacterSaidSimilar(characterId, content) {
+            if (!characterMemories[characterId]) return false;
+            
+            const memory = characterMemories[characterId];
+            const contentLower = content.toLowerCase();
+            
+            for (let spokenLine of memory.spokenLines) {
+                const similarity = calculateSimilarity(contentLower, spokenLine.toLowerCase());
+                if (similarity > 0.7) return true; // 70%相似度視為重複
+            }
+            return false;
+        }
+
+        // 計算文字相似度
+        function calculateSimilarity(str1, str2) {
+            const longer = str1.length > str2.length ? str1 : str2;
+            const shorter = str1.length > str2.length ? str2 : str1;
+            
+            if (longer.length === 0) return 1.0;
+            
+            const distance = levenshteinDistance(longer, shorter);
+            return (longer.length - distance) / longer.length;
+        }
+
+        // Levenshtein距離算法
+        function levenshteinDistance(str1, str2) {
+            const matrix = [];
+            
+            for (let i = 0; i <= str2.length; i++) {
+                matrix[i] = [i];
+            }
+            
+            for (let j = 0; j <= str1.length; j++) {
+                matrix[0][j] = j;
+            }
+            
+            for (let i = 1; i <= str2.length; i++) {
+                for (let j = 1; j <= str1.length; j++) {
+                    if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+                        matrix[i][j] = matrix[i - 1][j - 1];
+                    } else {
+                        matrix[i][j] = Math.min(
+                            matrix[i - 1][j - 1] + 1,
+                            matrix[i][j - 1] + 1,
+                            matrix[i - 1][j] + 1
+                        );
+                    }
+                }
+            }
+            
+            return matrix[str2.length][str1.length];
+        }
+
+        // 標籤切換
+        function switchTab(tabName) {
+            // 隱藏所有標籤內容
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // 移除所有標籤的active類
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 顯示選中的標籤內容
+            document.getElementById(tabName + '-tab').classList.remove('hidden');
+            
+            // 添加active類到點擊的標籤
+            event.target.classList.add('active');
+            
+            // 如果切換到預覽標籤，更新預覽內容
+            if (tabName === 'preview') {
+                updateNovelPreview();
+            }
+        }
+
+        // 處理Enter鍵發送
+        function handleEnterKey(event) {
+            if (event.key === 'Enter') {
+                addDialogue();
+            }
+        }
+
+        // 載入角色範本
+        function loadCharacterTemplates() {
+            console.log('載入角色範本...'); // 除錯用
+            characterTemplates.forEach(template => {
+                characters.push({...template, id: Date.now() + Math.random()});
+            });
+            console.log('範本載入完成，角色數量:', characters.length); // 除錯用
+        }
+
+        // 更新角色列表顯示
+        function updateCharacterList() {
+            const listContainer = document.querySelector('.character-list');
+            listContainer.innerHTML = '';
+            
+            characters.forEach(char => {
+                const li = document.createElement('li');
+                li.className = 'character-item';
+                li.innerHTML = `
+                    <div class="character-name">${char.name}</div>
+                    <div class="character-desc">${char.personality}</div>
+                    <div style="margin-top: 8px;">
+                        <button class="btn" style="font-size: 12px; padding: 5px 10px;" onclick="editCharacter('${char.id}')">編輯</button>
+                        <button class="btn btn-secondary" style="font-size: 12px; padding: 5px 10px;" onclick="deleteCharacter('${char.id}')">刪除</button>
+                    </div>
+                `;
+                listContainer.appendChild(li);
+            });
+        }
+
+        // 更新說話者選擇
+        function updateSpeakerSelect() {
+            const select = document.getElementById('speaker-select');
+            const protagonistSelect = document.getElementById('protagonist-select');
+            
+            select.innerHTML = '<option value="">選擇說話者</option>';
+            protagonistSelect.innerHTML = '<option value="">選擇主角</option>';
+            
+            console.log('更新說話者選擇，角色數量:', characters.length); // 除錯用
+            
+            characters.forEach(char => {
+                // 說話者選擇
+                const option = document.createElement('option');
+                option.value = char.id;
+                option.textContent = char.name;
+                select.appendChild(option);
+                
+                // 主角選擇
+                const protagonistOption = document.createElement('option');
+                protagonistOption.value = char.id;
+                protagonistOption.textContent = char.name;
+                protagonistSelect.appendChild(protagonistOption);
+                
+                console.log('新增選項:', char.name, 'ID:', char.id); // 除錯用
+            });
+        }
+
+        // 顯示新增角色表單
+        function showCreateCharacter() {
+            switchTab('character');
+            clearCharacterForm();
+        }
+
+        // 儲存角色
+        function saveCharacter() {
+            const name = document.getElementById('char-name').value;
+            const personality = document.getElementById('char-personality').value;
+            const tone = document.getElementById('char-tone').value;
+            const behavior = document.getElementById('char-behavior').value;
+
+            if (!name) {
+                alert('請輸入角色名稱！');
+                return;
+            }
+
+            const character = {
+                id: currentEditingCharacter || Date.now() + Math.random(),
+                name,
+                personality,
+                tone,
+                behavior
+            };
+
+            if (currentEditingCharacter) {
+                // 編輯現有角色
+                const index = characters.findIndex(c => c.id === currentEditingCharacter);
+                characters[index] = character;
+            } else {
+                // 新增角色
+                characters.push(character);
+            }
+
+            updateCharacterList();
+            updateSpeakerSelect();
+            clearCharacterForm();
+            alert('角色已儲存！');
+        }
+
+        // 清除角色表單
+        function clearCharacterForm() {
+            document.getElementById('char-name').value = '';
+            document.getElementById('char-personality').value = '';
+            document.getElementById('char-tone').value = '';
+            document.getElementById('char-behavior').value = '';
+            currentEditingCharacter = null;
+        }
+
+        // 編輯角色
+        function editCharacter(id) {
+            const character = characters.find(c => c.id === id);
+            if (character) {
+                currentEditingCharacter = id;
+                document.getElementById('char-name').value = character.name;
+                document.getElementById('char-personality').value = character.personality;
+                document.getElementById('char-tone').value = character.tone;
+                document.getElementById('char-behavior').value = character.behavior;
+                switchTab('character');
+            }
+        }
+
+        // 刪除角色
+        function deleteCharacter(id) {
+            if (confirm('確定要刪除這個角色嗎？')) {
+                characters = characters.filter(c => c.id !== id);
+                updateCharacterList();
+                updateSpeakerSelect();
+            }
+        }
+
+        // 安全獲取API Key
+        function getAPIKey() {
+            const inputKey = document.getElementById('api-key').value;
+            return inputKey || apiKeyMemory;
+        }
+
+        // 新增對話時更新角色記憶
+        function addDialogue() {
+            const speakerId = document.getElementById('speaker-select').value;
+            const content = document.getElementById('dialogue-input').value.trim();
+
+            console.log('發送對話 - 說話者ID:', speakerId, '內容:', content);
+
+            if (!speakerId) {
+                alert('請先選擇說話者！');
+                return;
+            }
+
+            if (!content) {
+                alert('請輸入對話內容！');
+                return;
+            }
+
+            const speaker = characters.find(c => c.id == speakerId);
+            
+            if (!speaker) {
+                alert('找不到選擇的角色！');
+                return;
+            }
+
+            // 更新角色記憶
+            updateCharacterMemory(speakerId, content, '手動輸入');
+
+            const dialogue = {
+                type: 'dialogue',
+                speaker: speaker.name,
+                speakerId: speakerId,
+                content: content,
+                timestamp: new Date()
+            };
+
+            dialogues.push(dialogue);
+            displayDialogue(dialogue);
+            document.getElementById('dialogue-input').value = '';
+            
+            console.log('對話已新增:', dialogue);
+        }
+
+        // 新增旁白
+        function addNarrator() {
+            const content = prompt('請輸入旁白內容：');
+            if (content) {
+                const narrator = {
+                    type: 'narrator',
+                    content: content,
+                    timestamp: new Date()
+                };
+                dialogues.push(narrator);
+                displayNarrator(narrator);
+            }
+        }
+
+        // 顯示對話
+        function displayDialogue(dialogue) {
+            const container = document.getElementById('chat-container');
+            const messageDiv = document.createElement('div');
+            
+            // 檢查是否為主角
+            const isProtagonist = protagonistId && dialogue.speakerId == protagonistId;
+            messageDiv.className = isProtagonist ? 'message protagonist' : 'message other';
+            
+            messageDiv.innerHTML = `
+                <div class="message-header">${dialogue.speaker}</div>
+                ${dialogue.content}
+            `;
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // 顯示旁白
+        function displayNarrator(narrator) {
+            const container = document.getElementById('chat-container');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message narrator';
+            messageDiv.innerHTML = narrator.content; // 移除旁白標題
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // AI生成對話
+        function generateAIDialogue() {
+            const apiKey = getAPIKey();
+            if (!apiKey) {
+                alert('請先輸入OpenRouter API Key！\n\n🔒 安全提示：\n• API Key只會暫時儲存在記憶體中\n• 不會被保存到檔案或分享給他人\n• 關閉瀏覽器後會自動清除\n\n📍 去 openrouter.ai 取得API Key');
+                return;
+            }
+            
+            // 顯示AI控制面板
+            document.getElementById('ai-controls').style.display = 'block';
+            updateCharacterCheckboxes();
+        }
+
+        // 生成場景
+        function generateAIScene() {
+            const apiKey = getAPIKey();
+            if (!apiKey) {
+                alert('請先輸入OpenRouter API Key！');
+                return;
+            }
+            
+            generateSceneDescription();
+        }
+
+        // 模式2：自動生成完整小說（修復版）
+        function generateFullNovel() {
+            document.getElementById('novel-generation').style.display = 'block';
+        }
+
+        // 開始小說生成（修復版）
+        async function startNovelGeneration() {
+            const outline = document.getElementById('novel-outline').value;
+            const length = parseInt(document.getElementById('novel-length').value);
+            
+            // 獲取結尾風格
+            const endingSelect = document.getElementById('novel-ending').value;
+            const customEnding = document.getElementById('custom-ending').value;
+            const ending = endingSelect === 'custom' ? customEnding : endingSelect;
+            
+            // 獲取角色數量
+            const characterCountSelect = document.getElementById('character-count').value;
+            const customCharacterCount = parseInt(document.getElementById('custom-character-count').value);
+            const characterCount = characterCountSelect === 'custom' ? customCharacterCount : parseInt(characterCountSelect);
+
+            // 驗證输入
+            if (!outline.trim()) {
+                alert('請輸入小說大綱！');
+                return;
+            }
+
+            if (endingSelect === 'custom' && !customEnding.trim()) {
+                alert('請描述你想要的結尾風格！');
+                return;
+            }
+
+            if (characterCountSelect === 'custom' && (!customCharacterCount || customCharacterCount < 1 || customCharacterCount > 10)) {
+                alert('請輸入有效的角色數量 (1-10)！');
+                return;
+            }
+
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = '📚 生成中...請稍候';
+            btn.disabled = true;
+
+            try {
+                await generateNovelContent(outline, length, ending, characterCount);
+                hideNovelGeneration();
+                showSecurityTip('📚 小說生成完成！');
+            } catch (error) {
+                console.error('小說生成失敗:', error);
+                alert('小說生成失敗：' + error.message);
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        // 生成小說內容
+        async function generateNovelContent(outline, length, ending, characterCount) {
+            const apiKey = getAPIKey();
+
+            if (!apiKey) {
+                alert('小說自動生成需要API Key！\n\n請輸入OpenRouter API Key後再試。');
+                return;
+            }
+
+            // 清空現有對話
+            if (confirm('生成新小說將清空現有內容，確定繼續嗎？')) {
+                dialogues = [];
+                characterMemories = {};
+                const container = document.getElementById('chat-container');
+                container.innerHTML = '';
+            } else {
+                return;
+            }
+
+            // 生成小說結構
+            const novelStructure = await generateNovelStructure(apiKey, outline, length, ending, characterCount);
+            
+            // 根據結構生成具體內容
+            await generateNovelSections(apiKey, novelStructure);
+        }
+
+        // 生成小說結構
+        async function generateNovelStructure(apiKey, outline, length, ending, characterCount) {
+            const endingDescriptions = {
+                happy: '圓滿的結局，所有問題得到解決',
+                open: '開放式結局，留給讀者想像空間',
+                twist: '意外的轉折，顛覆讀者預期',
+                emotional: '感人的結局，觸動人心',
+                cliffhanger: '懸念結局，為續集鋪路'
+            };
+
+            const prompt = `你是專業小說編劇，請根據以下要求設計小說結構：
+
+大綱：${outline}
+目標字數：${length}字
+結尾風格：${endingDescriptions[ending]}
+主要角色數：${characterCount}個
+
+請生成小說結構，包含：
+1. 角色設定（${characterCount}個主要角色的姓名、個性、背景）
+2. 章節規劃（建議分成5-8個章節）
+3. 每章重點情節
+4. 對話重點分配
+
+格式：
+角色設定：
+A角色：[姓名] - [個性] - [背景]
+B角色：[姓名] - [個性] - [背景]
+...
+
+章節規劃：
+第一章：[標題] - [重點情節]
+第二章：[標題] - [重點情節]
+...
+
+只輸出結構，不要具體對話內容。`;
+
+            const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json',
+                    'HTTP-Referer': window.location.href,
+                    'X-Title': 'AI多角色對話小說系統'
+                },
+                body: JSON.stringify({
+                    model: "anthropic/claude-3-sonnet", // 用更強的模型生成結構
+                    messages: [{ role: 'user', content: prompt }],
+                    max_tokens: 1500,
+                    temperature: 0.7
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`結構生成失敗: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return data.choices[0].message.content;
+        }
+
+        // 根據結構生成具體章節
+        async function generateNovelSections(apiKey, structure) {
+            const chapters = structure.match(/第.+章：.+/g) || [];
+            
+            showSecurityTip(`📚 開始生成 ${chapters.length} 個章節...`);
+
+            for (let i = 0; i < chapters.length; i++) {
+                const chapterTitle = chapters[i];
+                
+                showSecurityTip(`📝 正在生成第 ${i + 1} 章...`);
+                
+                // 生成章節標題旁白
+                const titleNarrator = {
+                    type: 'narrator',
+                    content: `=== ${chapterTitle} ===`,
+                    timestamp: new Date(),
+                    generated: true,
+                    isChapterTitle: true
+                };
+                dialogues.push(titleNarrator);
+                displayNarrator(titleNarrator);
+
+                // 生成該章節的對話和旁白
+                await generateChapterContent(apiKey, structure, chapterTitle, i + 1);
+                
+                // 添加章節間隔
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+        }
+
+        // 生成章節內容
+        async function generateChapterContent(apiKey, structure, chapterTitle, chapterNumber) {
+            const prompt = `根據以下小說結構，生成具體的章節內容：
+
+小說結構：
+${structure}
+
+當前章節：${chapterTitle}
+
+請生成這個章節的具體內容，包含：
+1. 3-5段對話（角色名：對話內容）
+2. 2-3段旁白描述（場景、情感、動作等）
+3. 內容要推進劇情，符合章節主題
+4. 對話要符合角色個性
+5. 總字數控制在800-1200字
+
+格式：
+旁白：[場景描述]
+角色名：[對話內容]
+旁白：[情節描述]
+角色名：[對話內容]
+...
+
+直接輸出內容，不要其他說明。`;
+
+            const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json',
+                    'HTTP-Referer': window.location.href,
+                    'X-Title': 'AI多角色對話小說系統'
+                },
+                body: JSON.stringify({
+                    model: "anthropic/claude-3-haiku",
+                    messages: [{ role: 'user', content: prompt }],
+                    max_tokens: 1500,
+                    temperature: 0.8
+                })
+            });
+
+            if (!response.ok) {
+                console.error(`第${chapterNumber}章生成失敗`);
+                return;
+            }
+
+            const data = await response.json();
+            const chapterContent = data.choices[0].message.content;
+
+            // 解析並添加章節內容
+            await parseAndAddChapterContent(chapterContent);
+        }
+
+        // 解析章節內容
+        async function parseAndAddChapterContent(content) {
+            const lines = content.split('\n').filter(line => line.trim());
+
+            for (const line of lines) {
+                if (line.startsWith('旁白：')) {
+                    const narratorContent = line.replace('旁白：', '').trim();
+                    const narrator = {
+                        type: 'narrator',
+                        content: narratorContent,
+                        timestamp: new Date(),
+                        generated: true,
+                        novelGenerated: true
+                    };
+                    dialogues.push(narrator);
+                    displayNarrator(narrator);
+                    
+                } else {
+                    const match = line.match(/^(.+?)：(.+)$/);
+                    if (match) {
+                        const speakerName = match[1].trim();
+                        const dialogueContent = match[2].trim();
+                        
+                        const dialogue = {
+                            type: 'dialogue',
+                            speaker: speakerName,
+                            speakerId: 'novel_' + speakerName, // 小說生成的角色ID
+                            content: dialogueContent,
+                            timestamp: new Date(),
+                            generated: true,
+                            novelGenerated: true
+                        };
+                        
+                        dialogues.push(dialogue);
+                        displayDialogue(dialogue);
+                    }
+                }
+                
+                // 添加延遲效果
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        }
+
+        // 隱藏小說生成面板
+        function hideNovelGeneration() {
+            document.getElementById('novel-generation').style.display = 'none';
+        }
+
+        // 開始AI生成（接入OpenRouter API）
+        async function startAIGeneration() {
+            const apiKey = getAPIKey();
+            const context = document.getElementById('scene-context').value;
+            const style = document.getElementById('dialogue-style').value;
+            const count = parseInt(document.getElementById('generation-count').value) || 2;
+            
+            // 獲取選中的角色
+            const checkboxes = document.querySelectorAll('#character-checkboxes input[type="checkbox"]:checked');
+            const selectedCharacters = Array.from(checkboxes).map(cb => {
+                const charId = cb.value;
+                return characters.find(c => c.id == charId);
+            }).filter(Boolean);
+
+            if (selectedCharacters.length === 0) {
+                alert('請至少選擇1個角色進行對話！');
+                return;
+            }
+
+            // 檢查API Key
+            if (!apiKey) {
+                alert('請先輸入OpenRouter API Key！\n\n沒有API Key將使用模擬生成。');
+                // 使用模擬生成
+                return await simulateAIGeneration(selectedCharacters, context, style);
+            }
+
+            // 顯示載入狀態
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = '🤖 AI思考中...';
+            btn.disabled = true;
+
+            try {
+                console.log('使用OpenRouter API生成對話...');
+                await generateWithOpenRouter(apiKey, selectedCharacters, context, style, count);
+                hideAIControls();
+                showSecurityTip('🤖 OpenRouter AI對話生成完成');
+                
+            } catch (error) {
+                console.error('OpenRouter API錯誤:', error);
+                console.log('API失敗，改用模擬生成...');
+                
+                // API失敗時使用模擬生成
+                await simulateAIGeneration(selectedCharacters, context, style);
+                hideAIControls();
+                showSecurityTip('🤖 API失敗，已改用模擬生成');
+                
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        // 使用OpenRouter API生成對話（改進版）
+        async function generateWithOpenRouter(apiKey, characters, context, style, count) {
+            // 建構角色描述
+            const characterDescriptions = characters.map(char => 
+                `${char.name}：個性${char.personality}，說話語氣${char.tone}，行為特色${char.behavior}`
+            ).join('\n');
+
+            // 獲取最近的對話歷史並分析
+            const recentDialogues = dialogues.slice(-3).map(d => {
+                if (d.type === 'dialogue') {
+                    return `${d.speaker}：${d.content}`;
+                } else if (d.type === 'narrator') {
+                    return `(場景：${d.content})`;
+                }
+                return '';
+            }).filter(Boolean);
+
+            // 分析最後一句話，判斷需要什麼樣的回應
+            const lastDialogue = dialogues.length > 0 ? dialogues[dialogues.length - 1] : null;
+            let contextHint = '';
+            
+            if (lastDialogue && lastDialogue.type === 'dialogue') {
+                if (lastDialogue.content.includes('？') || lastDialogue.content.includes('?')) {
+                    contextHint = '(前面有問題需要回答)';
+                } else if (lastDialogue.content.includes('。') || lastDialogue.content.includes('！')) {
+                    contextHint = '(需要對前面的話做出回應或延續話題)';
+                }
+            }
+
+            // 風格說明
+            const styleDescriptions = {
+                natural: '自然日常的對話，像朋友間的輕鬆聊天',
+                dramatic: '戲劇化、充滿情感和張力的對話',
+                romantic: '溫馨浪漫、充滿感情的對話',
+                humorous: '輕鬆幽默、活潑有趣的對話',
+                tense: '緊張嚴肅、充滿壓力的對話'
+            };
+
+            const prompt = `你是專業編劇，請生成符合要求的對話：
+
+== 角色設定 ==
+${characterDescriptions}
+
+== 對話情境 ==
+場景：${context || '日常場景'}
+風格：${styleDescriptions[style] || '自然對話'}
+${contextHint}
+
+== 最近對話 ==
+${recentDialogues.length > 0 ? recentDialogues.join('\n') : '(對話開始)'}
+
+== 生成要求 ==
+1. 生成${count}句連貫的對話
+2. 每句都要符合角色個性
+3. 要延續前面的話題或合理轉換
+4. 如果前面有問題要回答，如果是陳述要回應
+5. 避免重複已說過的內容
+6. 對話要自然流暢，像真人聊天
+
+== 輸出格式 ==
+角色名：對話內容
+角色名：對話內容
+(只輸出對話，不要其他說明)`;
+
+            try {
+                console.log('發送改進版API請求...');
+                
+                const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json',
+                        'HTTP-Referer': window.location.href,
+                        'X-Title': 'AI多角色對話小說系統'
+                    },
+                    body: JSON.stringify({
+                        model: "anthropic/claude-3-haiku", // 改用更快更便宜的模型
+                        messages: [
+                            {
+                                role: 'user',
+                                content: prompt
+                            }
+                        ],
+                        max_tokens: 800,
+                        temperature: 0.9, // 提高創意性
+                        top_p: 0.95,
+                        stream: false
+                    })
+                });
+
+                console.log('API回應狀態:', response.status);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('API錯誤:', errorText);
+                    throw new Error(`API請求失敗 (${response.status})`);
+                }
+
+                const data = await response.json();
+                console.log('API成功回應');
+                
+                if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+                    throw new Error('API回應格式錯誤');
+                }
+
+                const generatedText = data.choices[0].message.content;
+                console.log('生成內容:', generatedText);
+
+                // 解析並添加生成的對話
+                await parseAndAddGeneratedDialogue(generatedText, characters);
+
+            } catch (error) {
+                console.error('API請求完全失敗:', error.message);
+                throw error;
+            }
+        }
+
+        // 解析並添加生成的對話（改進版）
+        async function parseAndAddGeneratedDialogue(text, availableCharacters) {
+            const lines = text.split('\n').filter(line => line.trim());
+            console.log('解析對話行數:', lines.length);
+            
+            for (const line of lines) {
+                // 匹配格式：角色名稱：對話內容
+                const match = line.match(/^(.+?)：(.+)$/);
+                if (match) {
+                    const speakerName = match[1].trim();
+                    const content = match[2].trim();
+                    
+                    console.log('解析到對話 -', '角色:', speakerName, '內容:', content);
+                    
+                    // 尋找對應的角色
+                    const character = availableCharacters.find(char => 
+                        char.name === speakerName || 
+                        char.name.includes(speakerName) || 
+                        speakerName.includes(char.name)
+                    );
+                    
+                    if (character) {
+                        // 更新角色記憶
+                        updateCharacterMemory(character.id, content, 'OpenRouter生成');
+                        
+                        const dialogue = {
+                            type: 'dialogue',
+                            speaker: character.name,
+                            speakerId: character.id,
+                            content: content,
+                            timestamp: new Date(),
+                            generated: true,
+                            apiGenerated: true // 標記為真實API生成
+                        };
+                        
+                        dialogues.push(dialogue);
+                        displayDialogue(dialogue);
+                        
+                        console.log('對話已添加:', dialogue);
+                        
+                        // 添加延遲讓對話逐一出現
+                        await new Promise(resolve => setTimeout(resolve, 800));
+                    } else {
+                        console.warn('找不到匹配的角色:', speakerName);
+                    }
+                } else {
+                    console.warn('無法解析的對話格式:', line);
+                }
+            }
+        }
+
+        // 使用OpenRouter API生成對話
+        async function generateDialogueWithClaude(apiKey, characters, context, style) {
+            // 使用預設的Claude 3 Sonnet模型
+            const selectedModel = "anthropic/claude-3-sonnet";
+            
+            // 建構角色描述
+            const characterDescriptions = characters.map(char => 
+                `${char.name}：個性${char.personality}，說話語氣${char.tone}，行為特色${char.behavior}`
+            ).join('\n');
+
+            // 獲取最近的對話歷史
+            const recentDialogues = dialogues.slice(-5).map(d => {
+                if (d.type === 'dialogue') {
+                    return `${d.speaker}：${d.content}`;
+                } else {
+                    return `(${d.content})`;
+                }
+            }).join('\n');
+
+            const prompt = `你是一個專業的對話編劇。請根據以下設定生成2-3輪自然的對話：
+
+角色設定：
+${characterDescriptions}
+
+對話情境：${context || '日常互動'}
+對話風格：${style}
+
+${recentDialogues ? `最近對話歷史：\n${recentDialogues}\n` : ''}
+
+請生成符合各角色個性的對話，每個角色至少說一句話。格式：
+角色名稱：對話內容
+
+請直接輸出對話，不要其他說明。`;
+
+            try {
+                // 使用代理服務器來避免CORS問題
+                const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+                const targetUrl = 'https://openrouter.ai/api/v1/chat/completions';
+                
+                const response = await fetch(proxyUrl + targetUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Origin': window.location.origin
+                    },
+                    body: JSON.stringify({
+                        model: selectedModel,
+                        messages: [
+                            {
+                                role: 'user',
+                                content: prompt
+                            }
+                        ],
+                        max_tokens: 1000,
+                        temperature: 0.8,
+                        top_p: 0.9,
+                        stream: false
+                    })
+                });
+
+                if (!response.ok) {
+                    // 如果代理失敗，嘗試模擬生成
+                    console.warn('API請求失敗，使用模擬生成');
+                    return await simulateAIGeneration(characters, context, style);
+                }
+
+                const data = await response.json();
+                
+                if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+                    throw new Error('API回應格式錯誤');
+                }
+
+                const generatedText = data.choices[0].message.content;
+                console.log('AI生成內容:', generatedText);
+
+                // 解析生成的對話
+                await parseAndAddGeneratedDialogue(generatedText, characters);
+
+            } catch (error) {
+                console.error('OpenRouter API錯誤:', error);
+                // 使用模擬生成作為備用方案
+                console.log('使用模擬AI生成作為備用方案');
+                await simulateAIGeneration(characters, context, style);
+            }
+        }
+
+        // 改進的模擬AI生成（更連貫）
+        async function simulateAIGeneration(characters, context, style) {
+            console.log('使用改進版模擬生成，角色:', characters.map(c => c.name));
+            
+            // 分析當前對話情境
+            const lastDialogue = dialogues.length > 0 ? dialogues[dialogues.length - 1] : null;
+            const isQuestion = lastDialogue && lastDialogue.type === 'dialogue' && 
+                             (lastDialogue.content.includes('？') || lastDialogue.content.includes('?'));
+            
+            // 連貫對話生成策略
+            for (let i = 0; i < Math.min(characters.length, 2); i++) {
+                const character = characters[i];
+                
+                // 初始化角色記憶
+                initializeCharacterMemory(character.id);
+                
+                // 生成連貫的回應
+                const generatedContent = generateCoherentResponse(character, style, lastDialogue, isQuestion, i);
+                
+                if (generatedContent) {
+                    // 更新角色記憶
+                    updateCharacterMemory(character.id, generatedContent, `模擬生成-${style}`);
+                    
+                    const dialogue = {
+                        type: 'dialogue',
+                        speaker: character.name,
+                        speakerId: character.id,
+                        content: generatedContent,
+                        timestamp: new Date(),
+                        generated: true,
+                        simulated: true
+                    };
+                    
+                    dialogues.push(dialogue);
+                    displayDialogue(dialogue);
+                    
+                    // 更新最後對話引用
+                    lastDialogue = dialogue;
+                    
+                    // 延遲效果
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+            }
+            
+            showSecurityTip('🤖 使用智能模擬生成');
+        }
+
+        // 生成連貫回應
+        function generateCoherentResponse(character, style, lastDialogue, isQuestion, order) {
+            // 連貫回應庫
+            const coherentResponses = {
+                艾莉絲: {
+                    // 回答問題
+                    answer: {
+                        natural: ["我覺得是這樣...", "嗯，應該是...", "我想可能是...", "據我了解..."],
+                        dramatic: ["沒錯！就是這樣！", "我必須告訴你真相！", "這個問題很重要！"],
+                        romantic: ["你這樣問讓我很開心...", "我很樂意告訴你...", "和你分享這個真好..."],
+                        humorous: ["哈哈，這個問題有意思！", "讓我想想...應該是這樣...", "你問得真妙！"],
+                        tense: ["這個問題很關鍵...", "我必須仔細回答...", "情況可能是這樣..."]
+                    },
+                    // 回應陳述
+                    respond: {
+                        natural: ["你說得對。", "我也這麼想。", "確實是這樣。", "我同意你的看法。"],
+                        dramatic: ["完全正確！", "你說到重點了！", "就是這樣！"],
+                        romantic: ["你總是這麼體貼。", "和你想法一致真好。", "你理解我的感受。"],
+                        humorous: ["哈哈，我們想到一起了！", "你說得太對了！", "英雄所見略同！"],
+                        tense: ["你說得沒錯。", "情況確實如此。", "我也有同樣的擔憂。"]
+                    },
+                    // 開啟新話題
+                    initiate: {
+                        natural: ["對了，我想到一件事...", "說到這個...", "我想和你聊聊..."],
+                        dramatic: ["我有重要的事要說！", "你一定要聽這個！"],
+                        romantic: ["我一直想告訴你...", "有件事想和你分享..."],
+                        humorous: ["你知道一件有趣的事嗎？", "我想到個好玩的..."],
+                        tense: ["我們需要談談...", "有件事讓我擔心..."]
+                    }
+                },
+                雷恩: {
+                    answer: {
+                        natural: ["我認為...", "根據我的經驗...", "應該是這樣...", "我的看法是..."],
+                        dramatic: ["事實是這樣的。", "我必須告訴你...", "真相只有一個。"],
+                        romantic: ["我很樂意回答。", "能和你討論這個真好...", "你問得很好..."],
+                        humorous: ["這個問題不錯。", "讓我好好想想...", "你總是問得很有趣。"],
+                        tense: ["這很複雜...", "我們需要謹慎考慮...", "情況可能是..."]
+                    },
+                    respond: {
+                        natural: ["我理解你的想法。", "你分析得很好。", "確實如此。"],
+                        dramatic: ["你說得對，我們必須行動。", "我完全同意。", "這正是關鍵。"],
+                        romantic: ["你的想法很溫暖。", "我很感激你的分享。", "和你一致真好。"],
+                        humorous: ["你的觀點很有趣。", "我喜歡你這樣想。", "說得好。"],
+                        tense: ["你的擔憂是對的。", "我們必須重視這點。", "情況確實嚴重。"]
+                    },
+                    initiate: {
+                        natural: ["我想討論一下...", "有件事想和你談...", "關於..."],
+                        dramatic: ["我們面臨重要問題。", "有件事必須告訴你。"],
+                        romantic: ["我想和你分享...", "有個想法想說給你聽..."],
+                        humorous: ["想聊點輕鬆的嗎？", "我想到件有趣的事..."],
+                        tense: ["我們面臨問題...", "有件事讓我擔心..."]
+                    }
+                }
+            };
+
+            // 決定回應類型
+            let responseType = 'initiate';
+            if (lastDialogue && lastDialogue.type === 'dialogue' && 
+                lastDialogue.speakerId !== character.id) {
+                if (isQuestion) {
+                    responseType = 'answer';
+                } else {
+                    responseType = 'respond';
+                }
+            }
+
+            // 獲取適合的回應
+            const characterResponses = coherentResponses[character.name] || coherentResponses['艾莉絲'];
+            const typeResponses = characterResponses[responseType] || characterResponses['respond'];
+            const styleResponses = typeResponses[style] || typeResponses['natural'];
+
+            // 過濾已使用的回應
+            const availableResponses = styleResponses.filter(response => 
+                !hasCharacterSaidSimilar(character.id, response)
+            );
+
+            if (availableResponses.length === 0) {
+                // 備用回應
+                const fallbacks = ["我明白。", "是這樣啊。", "我想也是。"];
+                return fallbacks[order % fallbacks.length];
+            }
+
+            return availableResponses[order % availableResponses.length];
+        }
+
+        // 簡化的對話生成
+        function generateSimpleResponse(character, style, lastDialogue, order) {
+            // 基礎對話庫
+            const dialogueBank = {
+                艾莉絲: {
+                    natural: [
+                        "我覺得這個想法不錯。",
+                        "你說得對呢！",
+                        "我也有同樣的感覺。",
+                        "這樣想很有意思。",
+                        "我同意你的看法。",
+                        "確實是這樣的。",
+                        "我們想到一起去了。",
+                        "這個觀點很棒。"
+                    ],
+                    dramatic: [
+                        "這真的太驚人了！",
+                        "我完全沒想到會這樣！",
+                        "這改變了一切！",
+                        "太不可思議了！",
+                        "我們必須行動起來！",
+                        "這是關鍵時刻！",
+                        "情況比想像的嚴重！",
+                        "我們不能袖手旁觀！"
+                    ],
+                    romantic: [
+                        "和你聊天真的很開心。",
+                        "你總是這麼體貼。",
+                        "這種感覺很溫暖。",
+                        "有你真好。",
+                        "你的話讓我很感動。",
+                        "和你在一起很舒服。",
+                        "你理解我的想法。",
+                        "謝謝你的陪伴。"
+                    ],
+                    humorous: [
+                        "哈哈，你真幽默！",
+                        "這個想法太有趣了！",
+                        "我都要笑死了！",
+                        "你總是這麼搞笑。",
+                        "生活就要這樣輕鬆！",
+                        "你的笑話真棒！",
+                        "我們真會自娛自樂。",
+                        "太好玩了！"
+                    ],
+                    tense: [
+                        "情況有些複雜。",
+                        "我們得小心處理。",
+                        "這讓我有點擔心。",
+                        "我們需要想個辦法。",
+                        "時間可能不多了。",
+                        "情況不太樂觀。",
+                        "我們必須謹慎行事。",
+                        "這真讓人緊張。"
+                    ]
+                },
+                雷恩: {
+                    natural: [
+                        "我理解你的想法。",
+                        "這確實是個好觀點。",
+                        "我們可以仔細考慮一下。",
+                        "你分析得很有道理。",
+                        "我也是這樣認為的。",
+                        "這個想法值得深思。",
+                        "我同意你的看法。",
+                        "你說得很中肯。"
+                    ],
+                    dramatic: [
+                        "我會承擔起責任。",
+                        "我們必須勇敢面對。",
+                        "這是我們的使命。",
+                        "我不會讓你失望。",
+                        "讓我來保護大家。",
+                        "我們一起克服困難。",
+                        "這是正確的選擇。",
+                        "我們絕不能放棄。"
+                    ],
+                    romantic: [
+                        "能和你分享這些真好。",
+                        "你的想法總是很溫暖。",
+                        "我很珍惜這樣的時光。",
+                        "和你在一起很安心。",
+                        "你讓我感到很幸福。",
+                        "這種感覺很美好。",
+                        "我很感激有你陪伴。",
+                        "你是我重要的人。"
+                    ],
+                    humorous: [
+                        "你的幽默感很不錯。",
+                        "這樣想確實有趣。",
+                        "你總能帶來歡樂。",
+                        "我們別太嚴肅了。",
+                        "輕鬆一點也好。",
+                        "你說得對，要樂觀。",
+                        "這樣想心情會更好。",
+                        "謝謝你讓我開心。"
+                    ],
+                    tense: [
+                        "我們需要冷靜分析。",
+                        "讓我來想想辦法。",
+                        "我們必須保持理性。",
+                        "相信我，會有解決方案。",
+                        "我們一步步來處理。",
+                        "先不要太擔心。",
+                        "我會想辦法的。",
+                        "我們一起解決這個問題。"
+                    ]
+                },
+                旁白者: {
+                    natural: ["時光在對話中靜靜流淌。", "房間裡氣氛溫馨和諧。", "陽光透過窗戶灑進來。"],
+                    dramatic: ["空氣中瀰漫著緊張氣息。", "關鍵時刻即將到來。", "情況變得越來越緊急。"],
+                    romantic: ["溫馨的氣氛包圍著兩人。", "美好的時光在繼續。", "愛意在空中流淌。"],
+                    humorous: ["歡聲笑語充滿房間。", "快樂的氣氛感染著每個人。", "輕鬆的時光真美好。"],
+                    tense: ["緊張的氣氛越來越濃。", "危機感逐漸加重。", "每個人都感到壓力。"]
+                }
+            };
+
+            // 獲取角色對話選項
+            const characterDialogues = dialogueBank[character.name] || dialogueBank['艾莉絲'];
+            const styleDialogues = characterDialogues[style] || characterDialogues['natural'];
+            
+            // 過濾已使用的對話
+            const availableDialogues = styleDialogues.filter(content => 
+                !hasCharacterSaidSimilar(character.id, content)
+            );
+
+            // 如果沒有可用對話，使用備用
+            if (availableDialogues.length === 0) {
+                const fallbacks = ["我明白了。", "是這樣啊。", "我想也是。", "有道理。"];
+                return fallbacks[order % fallbacks.length];
+            }
+
+            // 簡單的連貫性處理
+            let selectedIndex = order;
+            
+            // 如果前面有對話，嘗試做出相關回應
+            if (lastDialogue && lastDialogue.type === 'dialogue' && lastDialogue.speakerId !== character.id) {
+                // 如果前面是問題，優先選擇回答性質的對話
+                if (lastDialogue.content.includes('？') || lastDialogue.content.includes('?')) {
+                    // 尋找適合回答的對話
+                    const answerDialogues = availableDialogues.filter(d => 
+                        d.includes('我覺得') || d.includes('我認為') || d.includes('確實') || d.includes('我同意')
+                    );
+                    if (answerDialogues.length > 0) {
+                        return answerDialogues[0];
+                    }
+                }
+                
+                // 如果前面是陳述，選擇回應性對話
+                const responseDialogues = availableDialogues.filter(d => 
+                    d.includes('你說得對') || d.includes('我也') || d.includes('同意') || d.includes('理解')
+                );
+                if (responseDialogues.length > 0) {
+                    selectedIndex = 0;
+                }
+            }
+
+            return availableDialogues[selectedIndex % availableDialogues.length];
+        }
+
+        // 獲取對話情境
+        function getConversationContext() {
+            const recentDialogues = dialogues.slice(-5);
+            return {
+                recentTopics: extractTopics(recentDialogues),
+                currentMood: determineMood(recentDialogues),
+                participantCount: new Set(recentDialogues.map(d => d.speakerId)).size,
+                lastSpeaker: recentDialogues.length > 0 ? recentDialogues[recentDialogues.length - 1].speaker : null
+            };
+        }
+
+        // 提取對話主題
+        function extractTopics(dialogues) {
+            const keywords = [];
+            dialogues.forEach(d => {
+                if (d.type === 'dialogue') {
+                    // 簡單的關鍵詞提取
+                    const words = d.content.match(/[\u4e00-\u9fa5]+/g) || [];
+                    keywords.push(...words.filter(w => w.length > 1));
+                }
+            });
+            return [...new Set(keywords)].slice(0, 5);
+        }
+
+        // 判斷對話情緒
+        function determineMood(dialogues) {
+            const emotionalWords = {
+                happy: ['開心', '高興', '快樂', '哈哈', '好', '棒', '太好了'],
+                sad: ['難過', '傷心', '失望', '不開心', '糟糕'],
+                angry: ['生氣', '憤怒', '不爽', '討厭'],
+                excited: ['興奮', '激動', '太棒了', '不可思議', '驚人'],
+                calm: ['平靜', '安靜', '穩定', '好的', '知道了']
+            };
+            
+            const recentContent = dialogues.slice(-3).map(d => d.content).join(' ');
+            
+            for (let mood in emotionalWords) {
+                for (let word of emotionalWords[mood]) {
+                    if (recentContent.includes(word)) {
+                        return mood;
+                    }
+                }
+            }
+            return 'neutral';
+        }
+
+        // 生成個性化且連貫的對話
+        async function generatePersonalizedDialogue(character, style, context, conversationContext, order) {
+            // 分析對話連貫性
+            const flowAnalysis = analyzeConversationFlow();
+            
+            // 根據分析結果選擇合適的回應策略
+            let responseStrategy = determineResponseStrategy(character, flowAnalysis, order);
+            
+            // 生成連貫的對話內容
+            return generateCoherentResponse(character, style, context, flowAnalysis, responseStrategy, order);
+        }
+
+        // 決定回應策略
+        function determineResponseStrategy(character, flowAnalysis, order) {
+            // 如果有直接問題需要回答
+            if (flowAnalysis.needsResponse && flowAnalysis.lastSpeaker && 
+                flowAnalysis.lastSpeaker.speakerId !== character.id) {
+                return 'answer_question';
+            }
+            
+            // 如果前一個角色剛說完，需要回應
+            if (flowAnalysis.lastSpeaker && flowAnalysis.lastSpeaker.speakerId !== character.id) {
+                if (flowAnalysis.conversationFlow === 'question_asked') {
+                    return 'answer_question';
+                } else {
+                    return 'respond_to_statement';
+                }
+            }
+            
+            // 如果是同一個角色接續說話
+            if (flowAnalysis.lastSpeaker && flowAnalysis.lastSpeaker.speakerId === character.id) {
+                return 'continue_thought';
+            }
+            
+            // 如果是對話開始或新話題
+            if (order === 0 || !flowAnalysis.lastSpeaker) {
+                return 'initiate_topic';
+            }
+            
+            return 'general_response';
+        }
+
+        // 生成連貫的回應
+        function generateCoherentResponse(character, style, context, flowAnalysis, strategy, order) {
+            // 連貫對話模板，基於角色個性和回應策略
+            const coherentDialogues = {
+                艾莉絲: {
+                    answer_question: {
+                        natural: ["我覺得是這樣的...", "嗯，我想應該是...", "據我所知...", "我的看法是..."],
+                        dramatic: ["天哪！這個問題...", "這真的很重要！", "我必須告訴你...", "這改變了一切！"],
+                        romantic: ["你這樣問讓我想到...", "和你討論這個真的很棒...", "我很高興你問這個..."],
+                        humorous: ["哈哈，這個問題很有趣！", "你問到重點了！", "讓我想想...應該是這樣..."],
+                        tense: ["這個問題很關鍵...", "我們必須仔細考慮...", "情況可能比我們想的複雜..."]
+                    },
+                    respond_to_statement: {
+                        natural: ["你說得對。", "我也是這麼想的。", "這個想法不錯。", "我同意你的看法。"],
+                        dramatic: ["完全正確！", "這就是我想說的！", "你說到重點了！", "沒錯，就是這樣！"],
+                        romantic: ["你總是這麼體貼。", "和你想法一致真好。", "你理解我的感受。"],
+                        humorous: ["哈哈，我們想到一起去了！", "你讀懂我的心思了！", "英雄所見略同！"],
+                        tense: ["你說得沒錯，我們得小心。", "我也有同樣的擔憂。", "情況確實如你所說。"]
+                    },
+                    continue_thought: {
+                        natural: ["而且我還想補充...", "對了，還有一點...", "另外...", "我想再說..."],
+                        dramatic: ["不只如此！", "還有更重要的是...", "等等，還有...", "我還沒說完..."],
+                        romantic: ["還有...", "我想再告訴你...", "另外...", "還想和你分享..."],
+                        humorous: ["對了對了！", "我差點忘了...", "還有一件有趣的事...", "說到這個..."],
+                        tense: ["更糟的是...", "還有一個問題...", "我們還要考慮...", "別忘了..."]
+                    },
+                    initiate_topic: {
+                        natural: ["我想和你聊聊...", "你知道嗎...", "我剛才想到...", "有件事想告訴你..."],
+                        dramatic: ["我有重要的事要說！", "你一定要聽這個！", "發生了不得了的事！"],
+                        romantic: ["和你在一起真好...", "我一直想告訴你...", "有個想法想和你分享..."],
+                        humorous: ["你聽過這個笑話嗎？", "我想到一件有趣的事...", "來聊點輕鬆的..."],
+                        tense: ["我們需要談談...", "有個嚴重的問題...", "情況有些不對勁..."]
+                    }
+                },
+                雷恩: {
+                    answer_question: {
+                        natural: ["我認為...", "根據我的經驗...", "這個問題...", "讓我想想..."],
+                        dramatic: ["這是個重要的問題。", "我必須誠實地說...", "事實是...", "我們必須面對現實..."],
+                        romantic: ["我很樂意回答你。", "這讓我想到我們...", "你問得很好..."],
+                        humorous: ["這個問題有意思。", "讓我好好想想...", "你真會問問題。"],
+                        tense: ["這個問題很複雜...", "我們需要謹慎考慮...", "情況可能是這樣..."]
+                    },
+                    respond_to_statement: {
+                        natural: ["我理解你的想法。", "你說得有道理。", "這確實是個好觀點。"],
+                        dramatic: ["你說得對，我們必須行動。", "我完全同意你的看法。", "這正是我們需要的。"],
+                        romantic: ["你的想法總是很溫暖。", "我很感激你的分享。", "和你想法一致真好。"],
+                        humorous: ["你的觀點很有趣。", "我喜歡你這樣想。", "你總是能帶來新視角。"],
+                        tense: ["你的擔憂是對的。", "我們必須認真對待。", "情況確實如你所說。"]
+                    },
+                    continue_thought: {
+                        natural: ["我想補充一點...", "還有就是...", "另外...", "我覺得還需要考慮..."],
+                        dramatic: ["更重要的是...", "我們還必須...", "不能忘記...", "關鍵在於..."],
+                        romantic: ["我還想說...", "另外...", "還有一件事...", "我想告訴你..."],
+                        humorous: ["對了...", "還有一點...", "我差點忘了...", "說到這個..."],
+                        tense: ["我們還要注意...", "別忘了...", "更重要的是...", "我擔心的是..."]
+                    },
+                    initiate_topic: {
+                        natural: ["我想討論一下...", "有件事想和你談談...", "我在想...", "關於..."],
+                        dramatic: ["我們需要談論一個重要問題。", "有件事我必須告訴你。", "情況發生了變化。"],
+                        romantic: ["我想和你分享...", "有個想法想告訴你...", "我一直在想我們..."],
+                        humorous: ["你想聊點什麼？", "我想到一件事...", "來談點有趣的..."],
+                        tense: ["我們面臨一個問題...", "有件事讓我擔心...", "我們需要準備..."]
+                    }
+                }
+            };
+
+            // 獲取對應的對話模板
+            const characterDialogues = coherentDialogues[character.name] || coherentDialogues['艾莉絲'];
+            const strategyDialogues = characterDialogues[strategy] || characterDialogues['general_response'] || characterDialogues['respond_to_statement'];
+            const styleDialogues = strategyDialogues[style] || strategyDialogues['natural'];
+
+            // 過濾已使用的對話
+            const availableDialogues = styleDialogues.filter(content => 
+                !hasCharacterSaidSimilar(character.id, content)
+            );
+
+            if (availableDialogues.length === 0) {
+                return generateFallbackResponse(character, style, flowAnalysis);
+            }
+
+            // 基於當前話題調整對話
+            let selectedDialogue = availableDialogues[order % availableDialogues.length];
+            
+            // 如果有具體話題，嘗試結合話題內容
+            if (flowAnalysis.currentTopic && flowAnalysis.currentTopic.type !== 'general') {
+                selectedDialogue = adaptToTopic(selectedDialogue, flowAnalysis.currentTopic, character);
+            }
+
+            return selectedDialogue;
+        }
+
+        // 根據話題調整對話
+        function adaptToTopic(dialogue, topic, character) {
+            const topicAdaptations = {
+                weather: {
+                    艾莉絲: ["對啊，天氣真的...", "我覺得這個天氣...", "天氣讓我想到..."],
+                    雷恩: ["關於天氣，我想...", "這樣的天氣確實...", "天氣方面..."]
+                },
+                feeling: {
+                    艾莉絲: ["我的感覺是...", "我也有同樣的感受...", "你的感覺我能理解..."],
+                    雷恩: ["我理解你的感受...", "關於這種感覺...", "我也有類似的想法..."]
+                },
+                question: {
+                    艾莉絲: ["關於你的問題...", "這個問題讓我想到...", "你問得很好..."],
+                    雷恩: ["讓我回答你的問題...", "這個問題...", "根據你的問題..."]
+                }
+            };
+
+            const adaptations = topicAdaptations[topic.type];
+            if (adaptations && adaptations[character.name]) {
+                const adaptedOptions = adaptations[character.name];
+                return adaptedOptions[Math.floor(Math.random() * adaptedOptions.length)];
+            }
+
+            return dialogue;
+        }
+
+        // 備用回應生成
+        function generateFallbackResponse(character, style, flowAnalysis) {
+            const fallbacks = {
+                艾莉絲: ["嗯，我明白了。", "是這樣啊。", "我想也是。", "有道理。"],
+                雷恩: ["我理解。", "確實如此。", "你說得對。", "我同意。"]
+            };
+
+            const characterFallbacks = fallbacks[character.name] || fallbacks['艾莉絲'];
+            return characterFallbacks[Math.floor(Math.random() * characterFallbacks.length)];
+        }
+
+        // 分析對話連貫性和話題
+        function analyzeConversationFlow() {
+            const recentDialogues = dialogues.slice(-5);
+            
+            return {
+                lastSpeaker: recentDialogues.length > 0 ? recentDialogues[recentDialogues.length - 1] : null,
+                currentTopic: extractCurrentTopic(recentDialogues),
+                conversationFlow: analyzeFlow(recentDialogues),
+                questionAsked: hasOpenQuestion(recentDialogues),
+                emotionalTone: analyzeEmotionalTone(recentDialogues),
+                needsResponse: needsDirectResponse(recentDialogues)
+            };
+        }
+
+        // 提取當前話題
+        function extractCurrentTopic(dialogues) {
+            if (dialogues.length === 0) return null;
+            
+            const lastDialogue = dialogues[dialogues.length - 1];
+            if (lastDialogue.type !== 'dialogue') return null;
+            
+            const content = lastDialogue.content;
+            
+            // 識別話題關鍵詞
+            const topicKeywords = {
+                greeting: ['你好', '嗨', '哈囉', '早安', '晚安'],
+                question: ['什麼', '為什麼', '怎麼', '哪裡', '誰', '何時', '如何'],
+                feeling: ['覺得', '感覺', '想', '認為', '喜歡', '討厭'],
+                suggestion: ['我們', '可以', '要不要', '建議', '不如'],
+                agreement: ['對', '是的', '沒錯', '同意', '確實'],
+                disagreement: ['不', '錯', '不對', '不同意', '但是'],
+                weather: ['天氣', '下雨', '晴天', '風', '冷', '熱'],
+                time: ['時間', '早上', '下午', '晚上', '明天', '昨天'],
+                place: ['這裡', '那裡', '地方', '房間', '外面', '家']
+            };
+            
+            for (let topic in topicKeywords) {
+                for (let keyword of topicKeywords[topic]) {
+                    if (content.includes(keyword)) {
+                        return { type: topic, keyword: keyword, content: content };
+                    }
+                }
+            }
+            
+            return { type: 'general', content: content };
+        }
+
+        // 分析對話流向
+        function analyzeFlow(dialogues) {
+            if (dialogues.length < 2) return 'start';
+            
+            const lastTwo = dialogues.slice(-2);
+            const [prev, current] = lastTwo;
+            
+            if (prev.speakerId === current.speakerId) return 'continuation';
+            if (current.content.includes('？') || current.content.includes('?')) return 'question_asked';
+            if (prev.content.includes('？') || prev.content.includes('?')) return 'answering_question';
+            
+            return 'normal_exchange';
+        }
+
+        // 檢查是否有未回答的問題
+        function hasOpenQuestion(dialogues) {
+            const lastDialogue = dialogues[dialogues.length - 1];
+            if (!lastDialogue || lastDialogue.type !== 'dialogue') return false;
+            
+            return lastDialogue.content.includes('？') || lastDialogue.content.includes('?');
+        }
+
+        // 分析情緒基調
+        function analyzeEmotionalTone(dialogues) {
+            const recentContent = dialogues.slice(-3).map(d => d.content).join(' ');
+            
+            const emotionPatterns = {
+                excited: ['太棒了', '真的嗎', '不可思議', '驚人', '哇'],
+                happy: ['開心', '高興', '快樂', '好', '棒', '哈哈'],
+                concerned: ['擔心', '煩惱', '困擾', '問題', '麻煩'],
+                sad: ['難過', '傷心', '失望', '不好', '糟糕'],
+                curious: ['想知道', '好奇', '有趣', '為什麼', '怎麼樣'],
+                calm: ['好的', '了解', '知道', '嗯', '是']
+            };
+            
+            for (let emotion in emotionPatterns) {
+                for (let pattern of emotionPatterns[emotion]) {
+                    if (recentContent.includes(pattern)) {
+                        return emotion;
+                    }
+                }
+            }
+            
+            return 'neutral';
+        }
+
+        // 判斷是否需要直接回應
+        function needsDirectResponse(dialogues) {
+            const lastDialogue = dialogues[dialogues.length - 1];
+            if (!lastDialogue || lastDialogue.type !== 'dialogue') return false;
+            
+            const content = lastDialogue.content;
+            
+            // 需要回應的情況
+            const responseNeeded = [
+                '你覺得', '你認為', '你想', '你知道',
+                '對吧', '是嗎', '好嗎', '可以嗎',
+                '？', '?'
+            ];
+            
+            return responseNeeded.some(pattern => content.includes(pattern));
+        }
+
+        // 解析並添加生成的對話
+        async function parseAndAddGeneratedDialogue(text, availableCharacters) {
+            const lines = text.split('\n').filter(line => line.trim());
+            
+            for (const line of lines) {
+                const match = line.match(/^(.+?)：(.+)$/);
+                if (match) {
+                    const speakerName = match[1].trim();
+                    const content = match[2].trim();
+                    
+                    // 尋找對應的角色
+                    const character = availableCharacters.find(char => 
+                        char.name === speakerName || char.name.includes(speakerName) || speakerName.includes(char.name)
+                    );
+                    
+                    if (character) {
+                        const dialogue = {
+                            type: 'dialogue',
+                            speaker: character.name,
+                            speakerId: character.id,
+                            content: content,
+                            timestamp: new Date(),
+                            generated: true // 標記為AI生成
+                        };
+                        
+                        dialogues.push(dialogue);
+                        displayDialogue(dialogue);
+                        
+                        // 添加短暫延遲讓對話逐一出現
+                        await new Promise(resolve => setTimeout(resolve, 800));
+                    }
+                }
+            }
+        }
+
+        // 生成場景描述（使用OpenRouter API）
+        async function generateSceneDescription() {
+            const apiKey = getAPIKey();
+            
+            try {
+                if (apiKey) {
+                    // 嘗試使用OpenRouter API
+                    await generateSceneWithOpenRouter(apiKey);
+                } else {
+                    // 沒有API Key，使用連貫場景生成
+                    const sceneText = generateCoherentScene();
+                    
+                    const narrator = {
+                        type: 'narrator',
+                        content: sceneText,
+                        timestamp: new Date(),
+                        generated: true,
+                        simulated: true
+                    };
+                    
+                    dialogues.push(narrator);
+                    displayNarrator(narrator);
+                    showSecurityTip('🎬 使用本地場景生成');
+                }
+
+            } catch (error) {
+                console.error('場景生成錯誤:', error);
+                // API失敗時使用本地生成
+                const fallbackScene = generateCoherentScene();
+                
+                const narrator = {
+                    type: 'narrator',
+                    content: fallbackScene,
+                    timestamp: new Date(),
+                    generated: true,
+                    simulated: true
+                };
+                
+                dialogues.push(narrator);
+                displayNarrator(narrator);
+                showSecurityTip('🎬 API失敗，使用本地場景生成');
+            }
+        }
+
+        // 使用OpenRouter生成場景描述
+        async function generateSceneWithOpenRouter(apiKey) {
+            // 獲取最近的對話來理解情境
+            const recentContext = dialogues.slice(-3).map(d => {
+                if (d.type === 'dialogue') {
+                    return `${d.speaker}說：${d.content}`;
+                }
+                return d.content;
+            }).join('，');
+
+            const prompt = `請根據以下對話情境，生成一段簡潔優美的場景描述或過場旁白：
+
+目前情境：${recentContext || '故事開始'}
+當前場景：${currentScene.location}，${currentScene.timeOfDay}，${currentScene.weather}
+
+要求：
+1. 生成20-50字的場景描述
+2. 要有文學性，符合故事氛圍
+3. 保持與當前場景設定的一致性
+4. 只輸出旁白內容，不要其他說明`;
+
+            const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+            const targetUrl = 'https://openrouter.ai/api/v1/chat/completions';
+            
+            const response = await fetch(proxyUrl + targetUrl, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    model: "anthropic/claude-3-sonnet",
+                    messages: [
+                        {
+                            role: 'user',
+                            content: prompt
+                        }
+                    ],
+                    max_tokens: 200,
+                    temperature: 0.7,
+                    stream: false
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`API錯誤 (${response.status})`);
+            }
+
+            const data = await response.json();
+            const sceneText = data.choices[0].message.content.trim();
+
+            // 添加場景描述
+            const narrator = {
+                type: 'narrator',
+                content: sceneText,
+                timestamp: new Date(),
+                generated: true,
+                apiGenerated: true
+            };
+            
+            dialogues.push(narrator);
+            displayNarrator(narrator);
+            showSecurityTip('🎬 OpenRouter場景生成完成');
+        }
+
+        // 分析並更新場景狀態
+        function analyzeAndUpdateScene() {
+            const recentDialogues = dialogues.slice(-5);
+            
+            // 從對話中提取場景線索
+            recentDialogues.forEach(dialogue => {
+                if (dialogue.type === 'dialogue') {
+                    const content = dialogue.content.toLowerCase();
+                    
+                    // 檢測地點變化的關鍵詞
+                    if (content.includes('走') || content.includes('去') || content.includes('到')) {
+                        if (content.includes('外面') || content.includes('出去') || content.includes('街上')) {
+                            currentScene.location = '戶外';
+                        } else if (content.includes('回來') || content.includes('進來') || content.includes('房間')) {
+                            currentScene.location = '室內';
+                        } else if (content.includes('咖啡廳') || content.includes('餐廳')) {
+                            currentScene.location = '咖啡廳';
+                        } else if (content.includes('公園')) {
+                            currentScene.location = '公園';
+                        } else if (content.includes('學校') || content.includes('教室')) {
+                            currentScene.location = '學校';
+                        }
+                    }
+                    
+                    // 檢測時間變化
+                    if (content.includes('晚上') || content.includes('夜晚') || content.includes('天黑')) {
+                        currentScene.timeOfDay = '夜晚';
+                    } else if (content.includes('早上') || content.includes('上午')) {
+                        currentScene.timeOfDay = '早晨';
+                    } else if (content.includes('下午') || content.includes('傍晚')) {
+                        currentScene.timeOfDay = '傍晚';
+                    }
+                    
+                    // 檢測天氣變化
+                    if (content.includes('下雨') || content.includes('雨')) {
+                        currentScene.weather = '雨天';
+                    } else if (content.includes('晴') || content.includes('陽光')) {
+                        currentScene.weather = '晴朗';
+                    } else if (content.includes('風')) {
+                        currentScene.weather = '有風';
+                    }
+                    
+                    // 檢測氛圍變化
+                    if (content.includes('緊張') || content.includes('危險') || content.includes('小心')) {
+                        currentScene.atmosphere = '緊張';
+                    } else if (content.includes('開心') || content.includes('快樂') || content.includes('哈哈')) {
+                        currentScene.atmosphere = '歡樂';
+                    } else if (content.includes('浪漫') || content.includes('美好') || content.includes('溫馨')) {
+                        currentScene.atmosphere = '溫馨';
+                    } else if (content.includes('平靜') || content.includes('安靜')) {
+                        currentScene.atmosphere = '平靜';
+                    }
+                }
+            });
+        }
+
+        // 生成連貫的場景描述
+        function generateCoherentScene() {
+            analyzeAndUpdateScene();
+            
+            const sceneTemplates = {
+                室內: {
+                    白天: {
+                        晴朗: [
+                            "陽光透過窗戶灑進房間，在地板上形成溫暖的光斑。",
+                            "室內的光線柔和而明亮，營造出舒適的氛圍。",
+                            "微風從半開的窗戶吹進來，帶來外面的清新空氣。"
+                        ],
+                        雨天: [
+                            "雨滴輕敲著窗玻璃，發出規律的節拍聲。",
+                            "室內顯得格外溫暖，與外面的雨天形成對比。",
+                            "雨聲成為了對話的背景音樂。"
+                        ],
+                        有風: [
+                            "窗簾在微風中輕柔地飄動著。",
+                            "風聲在房間裡輕柔地迴響。"
+                        ]
+                    },
+                    夜晚: {
+                        晴朗: [
+                            "月光透過窗戶灑進來，為房間增添了一絲詩意。",
+                            "室內的燈光溫暖而柔和，創造出寧靜的夜晚氛圍。",
+                            "夜晚的寧靜包圍著這個溫馨的空間。"
+                        ],
+                        雨天: [
+                            "夜雨敲打著窗戶，使室內顯得更加溫暖安全。",
+                            "雨夜的室內格外寧靜舒適。"
+                        ]
+                    }
+                },
+                戶外: {
+                    白天: {
+                        晴朗: [
+                            "陽光灑在街道上，微風輕撫過臉頰。",
+                            "天空湛藍，白雲悠悠飄過。",
+                            "溫暖的陽光讓一切都顯得生機勃勃。"
+                        ],
+                        雨天: [
+                            "雨滴從天空飄落，空氣中瀰漫著清新的味道。",
+                            "雨後的空氣格外清新，洗淨了城市的塵埃。"
+                        ]
+                    },
+                    夜晚: {
+                        晴朗: [
+                            "夜空中星星閃爍，街燈照亮了前方的路。",
+                            "涼爽的夜風帶來了遠方的花香。",
+                            "夜晚的城市在燈火中顯得格外美麗。"
+                        ]
+                    }
+                },
+                咖啡廳: {
+                    白天: {
+                        晴朗: [
+                            "咖啡廳裡瀰漫著香濃的咖啡味，陽光從窗戶灑進來。",
+                            "輕柔的音樂在咖啡廳裡播放著，營造出悠閒的氛圍。",
+                            "其他客人的低聲交談聲成為了舒適的背景音。"
+                        ]
+                    },
+                    傍晚: {
+                        晴朗: [
+                            "傍晚的咖啡廳燈光溫暖，窗外夕陽西下。",
+                            "咖啡廳在夕陽的照射下顯得格外溫馨。"
+                        ]
+                    }
+                },
+                公園: {
+                    白天: {
+                        晴朗: [
+                            "公園裡綠樹成蔭，鳥兒在枝頭歌唱。",
+                            "微風吹過樹葉，發出沙沙的聲響。",
+                            "陽光透過樹葉灑下斑駁的光影。"
+                        ]
+                    },
+                    傍晚: {
+                        晴朗: [
+                            "夕陽西下，公園裡的一切都被染成了金黃色。",
+                            "傍晚的公園格外寧靜，只有微風和鳥鳴聲。"
+                        ]
+                    }
+                }
+            };
+            
+            // 獲取當前場景的描述選項
+            const locationScenes = sceneTemplates[currentScene.location] || sceneTemplates['室內'];
+            const timeScenes = locationScenes[currentScene.timeOfDay] || locationScenes['白天'];
+            const weatherScenes = timeScenes[currentScene.weather] || timeScenes['晴朗'];
+            
+            if (weatherScenes.length === 0) {
+                return generateDefaultScene();
+            }
+            
+            // 根據氛圍調整描述
+            let selectedScene = weatherScenes[Math.floor(Math.random() * weatherScenes.length)];
+            
+            // 根據當前氛圍添加修飾
+            switch (currentScene.atmosphere) {
+                case '緊張':
+                    selectedScene += ' 空氣中似乎瀰漫著一絲緊張的氣息。';
+                    break;
+                case '歡樂':
+                    selectedScene += ' 歡快的氛圍讓一切都顯得更加美好。';
+                    break;
+                case '溫馨':
+                    selectedScene += ' 溫馨的氣氛讓人感到心情愉悦。';
+                    break;
+                case '平靜':
+                    selectedScene += ' 一切都顯得那麼平靜祥和。';
+                    break;
+            }
+            
+            return selectedScene;
+        }
+
+        // 預設場景描述
+        function generateDefaultScene() {
+            return "時光靜靜地流淌著，周圍的一切都顯得那麼自然而和諧。";
+        }
+
+        // 更新小說預覽
+        function updateNovelPreview() {
+            const preview = document.getElementById('novel-preview');
+            let novelText = '';
+
+            dialogues.forEach(item => {
+                if (item.type === 'dialogue') {
+                    novelText += `<p><strong>${item.speaker}：</strong>「${item.content}」</p>`;
+                } else if (item.type === 'narrator') {
+                    novelText += `<p style="text-align: center; font-style: italic; color: #666; margin: 20px 0;">${item.content}</p>`;
+                }
+            });
+
+            preview.innerHTML = novelText || '<p style="text-align: center; color: #666;">尚未建立對話內容...</p>';
+        }
+
+        // 匯出小說
+        function exportNovel() {
+            if (dialogues.length === 0) {
+                alert('請先建立一些對話內容！');
+                return;
+            }
+
+            const format = document.getElementById('export-format').value;
+            
+            switch(format) {
+                case 'txt':
+                    exportToTXT();
+                    break;
+                case 'docx':
+                    exportToWord();
+                    break;
+                case 'pdf':
+                    exportToPDF();
+                    break;
+                default:
+                    alert('請選擇匯出格式！');
+            }
+        }
+
+        // 匯出為TXT
+        function exportToTXT() {
+            let novelText = 'AI多角色對話小說\n' + '='.repeat(30) + '\n\n';
+            
+            dialogues.forEach(item => {
+                if (item.type === 'dialogue') {
+                    novelText += `${item.speaker}：「${item.content}」\n\n`;
+                } else if (item.type === 'narrator') {
+                    novelText += `${item.content}\n\n`;
+                }
+            });
+
+            const blob = new Blob([novelText], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '對話小說.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // 匯出為Word文件
+        function exportToWord() {
+            try {
+                const doc = new docx.Document({
+                    sections: [{
+                        properties: {},
+                        children: [
+                            new docx.Paragraph({
+                                text: "AI多角色對話小說",
+                                heading: docx.HeadingLevel.TITLE,
+                                alignment: docx.AlignmentType.CENTER,
+                            }),
+                            new docx.Paragraph({
+                                text: "",
+                                spacing: { after: 400 }
+                            }),
+                            ...dialogues.map(item => {
+                                if (item.type === 'dialogue') {
+                                    return new docx.Paragraph({
+                                        children: [
+                                            new docx.TextRun({
+                                                text: `${item.speaker}：`,
+                                                bold: true,
+                                            }),
+                                            new docx.TextRun({
+                                                text: `「${item.content}」`,
+                                            }),
+                                        ],
+                                        spacing: { after: 200 }
+                                    });
+                                } else if (item.type === 'narrator') {
+                                    return new docx.Paragraph({
+                                        text: item.content,
+                                        italics: true,
+                                        alignment: docx.AlignmentType.CENTER,
+                                        spacing: { after: 200 }
+                                    });
+                                }
+                            }).filter(Boolean)
+                        ]
+                    }]
+                });
+
+                docx.Packer.toBlob(doc).then(blob => {
+                    saveAs(blob, "對話小說.docx");
+                });
+            } catch (error) {
+                console.error('Word匯出錯誤:', error);
+                alert('Word匯出功能暫時無法使用，請選擇其他格式。');
+            }
+        }
+
+        // 匯出為PDF（圖片樣式）
+        function exportToPDF() {
+            if (dialogues.length === 0) {
+                alert('請先建立一些對話內容！');
+                return;
+            }
+
+            // 創建一個臨時的PDF預覽容器
+            const pdfContainer = document.createElement('div');
+            pdfContainer.style.cssText = `
+                width: 210mm;
+                min-height: 297mm;
+                background: white;
+                padding: 20mm;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+                position: absolute;
+                left: -9999px;
+                top: 0;
+                box-sizing: border-box;
+            `;
+
+            // 添加標題
+            const title = document.createElement('div');
+            title.style.cssText = `
+                text-align: center;
+                font-size: 24px;
+                font-weight: bold;
+                color: #333;
+                margin-bottom: 30px;
+                padding-bottom: 10px;
+                border-bottom: 3px solid #4facfe;
+            `;
+            title.textContent = 'AI多角色對話小說';
+            pdfContainer.appendChild(title);
+
+            // 添加對話內容
+            dialogues.forEach(item => {
+                const messageDiv = document.createElement('div');
+                messageDiv.style.cssText = `
+                    margin-bottom: 20px;
+                    padding: 15px;
+                    border-radius: 15px;
+                    max-width: 80%;
+                    word-wrap: break-word;
+                `;
+
+                if (item.type === 'dialogue') {
+                    const isProtagonist = protagonistId && item.speakerId == protagonistId;
+                    
+                    if (isProtagonist) {
+                        messageDiv.style.cssText += `
+                            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+                            color: white;
+                            margin-left: auto;
+                            margin-right: 0;
+                        `;
+                    } else {
+                        messageDiv.style.cssText += `
+                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                            color: white;
+                            margin-left: 0;
+                            margin-right: auto;
+                        `;
+                    }
+
+                    const speakerName = document.createElement('div');
+                    speakerName.style.cssText = `
+                        font-weight: bold;
+                        font-size: 14px;
+                        margin-bottom: 8px;
+                        opacity: 0.9;
+                    `;
+                    speakerName.textContent = item.speaker;
+
+                    const content = document.createElement('div');
+                    content.style.cssText = `
+                        font-size: 16px;
+                        line-height: 1.5;
+                    `;
+                    content.textContent = item.content;
+
+                    messageDiv.appendChild(speakerName);
+                    messageDiv.appendChild(content);
+
+                } else if (item.type === 'narrator') {
+                    messageDiv.style.cssText += `
+                        background: #f8f9fa;
+                        color: #495057;
+                        text-align: center;
+                        font-style: italic;
+                        margin: 20px auto;
+                        border-left: 4px solid #6c757d;
+                    `;
+                    messageDiv.textContent = item.content;
+                }
+
+                pdfContainer.appendChild(messageDiv);
+            });
+
+            // 暫時添加到頁面以進行截圖
+            document.body.appendChild(pdfContainer);
+
+            // 使用html2canvas截圖並轉換為PDF
+            html2canvas(pdfContainer, {
+                scale: 2,
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: 'white',
+                width: pdfContainer.scrollWidth,
+                height: pdfContainer.scrollHeight
+            }).then(canvas => {
+                const { jsPDF } = window.jspdf;
+                const imgData = canvas.toDataURL('image/png');
+                
+                // A4尺寸
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const imgWidth = 210;
+                const pageHeight = 295;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                let heightLeft = imgHeight;
+                let position = 0;
+
+                // 第一頁
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+
+                // 如果內容超過一頁，添加新頁面
+                while (heightLeft >= 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+
+                pdf.save('對話小說.pdf');
+                
+                // 清理臨時元素
+                document.body.removeChild(pdfContainer);
+            }).catch(error => {
+                console.error('PDF匯出錯誤:', error);
+                alert('PDF匯出失敗，請稍後再試或選擇其他格式。');
+                document.body.removeChild(pdfContainer);
+            });
+        }
+
+        // 儲存專案
+        function saveProject() {
+            const projectData = {
+                characters: characters,
+                dialogues: dialogues,
+                timestamp: new Date()
+            };
+
+            const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '小說專案.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // 重新顯示聊天內容
+        function refreshChatDisplay() {
+            const container = document.getElementById('chat-container');
+            container.innerHTML = '<div class="message narrator"><div class="message-header">系統提示</div>歡迎使用AI多角色對話小說系統！請先建立角色，然後開始創作對話。</div>';
+            
+            dialogues.forEach(item => {
+                if (item.type === 'dialogue') {
+                    displayDialogue(item);
+                } else if (item.type === 'narrator') {
+                    displayNarrator(item);
+                }
+            });
+        }
+
+        // 清空對話（同時重置場景狀態）
+        function clearChat() {
+            if (confirm('確定要清空所有對話嗎？這將重置所有角色的記憶和場景設定。此操作無法復原。')) {
+                dialogues = [];
+                characterMemories = {}; // 清空所有角色記憶
+                // 重置場景狀態
+                currentScene = {
+                    location: '室內',
+                    timeOfDay: '白天',
+                    weather: '晴朗',
+                    atmosphere: '平靜',
+                    established: false
+                };
+                const container = document.getElementById('chat-container');
+                container.innerHTML = '<div class="message narrator"><div class="message-header">系統提示</div>歡迎使用AI多角色對話小說系統！請先建立角色，然後開始創作對話。</div>';
+                showSecurityTip('💬 對話已清空，角色記憶和場景已重置');
+            }
+        }
+
+        // 載入範本
+        function loadTemplate() {
+            alert('角色範本已載入！你可以在角色列表中看到預設角色。');
+        }
+    </script>
+</body>
+</html>
