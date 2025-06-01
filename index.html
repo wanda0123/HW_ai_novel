@@ -324,26 +324,25 @@ async function generateDialogueOptions() {
 async function generateAIDialogueOptions(speaker, context) {
     const apiService = document.getElementById('api-service').value;
     
-    // 如果選擇了模擬模式，直接使用本地生成
+    // 如果選擇模擬模式，提示用戶
     if (apiService === 'simulation') {
-        return generateContextualOptions(speaker, context);
+        alert('模擬模式不支援對話選項生成，請選擇API服務並輸入API Key');
+        return [];
     }
     
     const apiKey = getAPIKeyByService(apiService);
     
     if (!apiKey) {
-        console.log('沒有API Key，使用本地生成');
-        return generateContextualOptions(speaker, context);
+        alert('請先輸入API Key才能生成對話選項！');
+        return [];
     }
     
     try {
-        console.log('嘗試AI生成對話選項...');
+        console.log('使用真實API生成對話選項...');
         
-        // 建構對話情境提示
         const prompt = buildDialogueOptionsPrompt(speaker, context);
-        
-        // 根據選擇的API服務生成
         let options;
+        
         switch (apiService) {
             case 'huggingface':
                 options = await generateWithHuggingFace(apiKey, prompt);
@@ -355,20 +354,20 @@ async function generateAIDialogueOptions(speaker, context) {
                 options = await generateWithGroq(apiKey, prompt);
                 break;
             default:
-                throw new Error('未知的API服務');
+                throw new Error('請選擇有效的API服務');
         }
         
         if (options && options.length >= 4) {
-            showSecurityTip(`🤖 ${apiService.toUpperCase()} AI生成完成`);
+            showSecurityTip(`🤖 ${apiService.toUpperCase()} API生成完成`);
             return options.slice(0, 4);
         } else {
-            throw new Error('AI生成的選項不足');
+            throw new Error('API生成的選項不足4個');
         }
         
     } catch (error) {
-        console.error('AI生成失敗，使用本地生成:', error);
-        showSecurityTip('🔄 AI失敗，改用本地智能生成');
-        return generateContextualOptions(speaker, context);
+        console.error('API生成失敗:', error);
+        alert(`API生成失敗：${error.message}\n請檢查API Key是否正確，或稍後再試。`);
+        return [];
     }
 }
 
@@ -2114,14 +2113,29 @@ function generateNovelCharacters(count, outline) {
         }
 
         // 生成模擬章節內容
-        // 生成與大綱相關的章節內容
+// 生成與大綱相關的章節內容（支援真實API）
 async function generateSimulatedChapterContent(chapter, characters, outline, chapterNum) {
     console.log(`生成第${chapterNum}章，大綱：${outline}`);
     
-    // 解析大綱關鍵詞
-    const outlineKeywords = extractOutlineKeywords(outline);
+    const apiService = document.getElementById('api-service').value;
+    const apiKey = getAPIKeyByService(apiService);
     
-    // 根據大綱生成相關內容
+    // 如果有API Key且不是模擬模式，使用真實API
+    if (apiKey && apiService !== 'simulation') {
+        try {
+            console.log(`使用 ${apiService} API生成第${chapterNum}章...`);
+            await generateChapterWithAPI(apiKey, apiService, chapter, characters, outline, chapterNum);
+            showSecurityTip(`🤖 ${apiService.toUpperCase()} 生成第${chapterNum}章完成`);
+            return;
+        } catch (error) {
+            console.error(`${apiService} API失敗，改用本地生成:`, error);
+            showSecurityTip(`🔄 API失敗，改用本地生成第${chapterNum}章`);
+        }
+    }
+    
+    // API失敗或沒有API Key時，使用本地生成
+    console.log(`使用本地生成第${chapterNum}章...`);
+    const outlineKeywords = extractOutlineKeywords(outline);
     const contentPieces = generateOutlineRelatedContent(chapter, characters, outline, outlineKeywords, chapterNum);
     
     for (const piece of contentPieces) {
@@ -4529,6 +4543,157 @@ function generateBackupOptions(speaker, context) {
         function loadTemplate() {
             alert('角色範本已載入！你可以在角色列表中看到預設角色。');
         }
+        
+// 使用API生成章節內容
+async function generateChapterWithAPI(apiKey, apiService, chapter, characters, outline, chapterNum) {
+    const characterDescriptions = characters.map(char => 
+        `${char.name}：個性${char.personality}，說話語氣${char.tone}`
+    ).join('\n');
+    
+    const prompt = `你是專業小說編劇，請根據以下設定生成第${chapterNum}章的內容：
+
+【小說大綱】
+${outline}
+
+【角色設定】
+${characterDescriptions}
+
+【章節主題】
+第${chapterNum}章：${chapter.title}
+主要情節：${chapter.theme}
+
+【生成要求】
+1. 生成符合大綱的章節內容
+2. 包含3-5段對話，符合角色個性
+3. 包含2-3段場景描述或動作描述
+4. 內容要推進劇情，與大綱相關
+5. 字數控制在300-500字
+
+【輸出格式】
+旁白：[場景描述]
+${characters[0].name}：「[對話內容]」
+動作：[動作描述]
+${characters[1]?.name || characters[0].name}：「[對話內容]」
+旁白：[情節描述]
+
+請直接輸出內容，不要其他說明。`;
+
+    let generatedText = '';
+    
+    // 根據不同API服務調用
+    switch (apiService) {
+        case 'huggingface':
+            generatedText = await generateWithHuggingFaceForNovel(apiKey, prompt);
+            break;
+        case 'deepseek':
+            generatedText = await generateWithDeepSeekForNovel(apiKey, prompt);
+            break;
+        case 'groq':
+            generatedText = await generateWithGroqForNovel(apiKey, prompt);
+            break;
+        default:
+            throw new Error('未支援的API服務');
+    }
+    
+    // 解析並添加生成的內容
+    if (generatedText) {
+        await parseAndAddChapterContent(generatedText);
+    } else {
+        throw new Error('API返回空內容');
+    }
+}
+
+// 使用DeepSeek生成小說內容
+async function generateWithDeepSeekForNovel(apiKey, prompt) {
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            model: 'deepseek-chat',
+            messages: [{ role: 'user', content: prompt }],
+            max_tokens: 800,
+            temperature: 0.8,
+            top_p: 0.9,
+            stream: false
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error(`DeepSeek API錯誤: ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (data.error) {
+        throw new Error(`DeepSeek錯誤: ${data.error.message}`);
+    }
+    
+    return data.choices[0]?.message?.content || '';
+}
+
+// 使用Groq生成小說內容
+async function generateWithGroqForNovel(apiKey, prompt) {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            model: 'llama3-8b-8192',
+            messages: [{ role: 'user', content: prompt }],
+            max_tokens: 800,
+            temperature: 0.8,
+            top_p: 0.9,
+            stream: false
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error(`Groq API錯誤: ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (data.error) {
+        throw new Error(`Groq錯誤: ${data.error.message}`);
+    }
+    
+    return data.choices[0]?.message?.content || '';
+}
+
+// 使用Hugging Face生成小說內容
+async function generateWithHuggingFaceForNovel(apiKey, prompt) {
+    const response = await fetch('https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            inputs: prompt,
+            parameters: {
+                max_length: 400,
+                temperature: 0.8,
+                do_sample: true,
+                top_p: 0.9
+            }
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error(`Hugging Face API錯誤: ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (data.error) {
+        throw new Error(`Hugging Face錯誤: ${data.error}`);
+    }
+    
+    return data[0]?.generated_text || '';
+}
+
     </script>
 </body>
 </html>
